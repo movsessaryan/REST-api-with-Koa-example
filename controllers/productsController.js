@@ -9,7 +9,7 @@ module.exports = {
         ctx.body = await db.products.get(Number(id));
     },
     add: async(ctx, next)=>{
-        await db.products.add(ctx.request.body);
+        await db.products.add( await ctx.request.body);
     },
     delete: async(ctx, id, next)=>{
         await db.products.delete(Number(id));
@@ -18,4 +18,4 @@ module.exports = {
         await db.products.update(Number(id), await ctx.request.body);
     }
 
-}
+};

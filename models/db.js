@@ -6,7 +6,7 @@ const errTypes = require('../constants/errorTypes.js');
 let CID = 4, PID = 4;
 const errorDbNotFound = (msg)=>{
   return errorWithType(msg, errTypes.DBNOTFOUND);
-}
+};
 const getProducstOfCompany = (compId)=>{
    const rv = [];
    products.forEach((p)=>{
@@ -17,11 +17,71 @@ const getProducstOfCompany = (compId)=>{
    return rv;
 };
 
-const replaceWith = (arr, id, value)=>{
-    const ind = arr.findIndex(x => x.id == id);
-    arr[idnex] = value;
-}
+const exampleProduct = {
+   id: 0,
+   name: "some name"
+};
 
+const exampleCompany = {
+   id: 0,
+   name: "some name"
+};
+
+const replaceWith = (arr, id, value)=>{
+    const ind = arr.findIndex(x => x.id === id);
+    arr[ind] = value;
+};
+
+const makeDbProduct = (prod)=>{
+    const rv = {id: ++PID};
+    if(!prod.name){
+      throw errorWithType("invalid product object", errTypes.INVALIDDATA);
+    }
+    rv.name = prod.name;
+    return rv;
+};
+
+const makeDbCompany = (comp)=>{
+    const rv = {id: ++CID};
+    if(!comp.name){
+      throw errorWithType("invalid company object", errTypes.INVALIDDATA);
+    }
+    rv.name = comp.name;
+    return rv;
+};
+
+const sameKeysAndTypes = (obj1, obj2)=>{
+    for(let key in obj1){
+        if(key !== 'id' && typeof obj2[key] !== typeof obj1[key]){
+            return false;
+        }
+    }
+    return true;
+};
+const validateId = (obj, arr, typeName)=>{
+    if(!obj.id && obj.id !== 0){
+        throw errorWithType(`invalid ${typeName} object`, errTypes.INVALIDDATA);            
+    }
+    if(!arr.find(x => x.id === obj.id)){
+        throw errorDbNotFound(`${typeName} with id ${obj.id} not found`);
+    }
+};
+const validateProduct = (prod, checkId)=>{
+    if(checkId){
+        validateId(prod, products, 'product');
+    }
+    if(!sameKeysAndTypes(prod, exampleProduct)){
+        throw errorWithType("invalid product object", errTypes.INVALIDDATA);       
+    }
+}
+const validateCompany = (comp, checkId = true)=>{
+     if(checkId){
+        validateId(comp, companies, 'company');
+     }
+     if(!sameKeysAndTypes(comp,exampleCompany)){
+        throw errorWithType("invalid company object", errTypes.INVALIDDATA);             
+     }
+};
 
 //this functions shuld return promisees in real world so will use tehm with await in this app
 module.exports = {
@@ -48,8 +108,8 @@ module.exports = {
             return this.list[ind];
         },
         add: function(prod){
-            prod.id = ++PID;
-            products.push(prod);
+            validateProduct(prod,false);
+            products.push(makeDbProduct(prod));
             this.clean = false;
         },
         delete: function(id){
@@ -60,10 +120,9 @@ module.exports = {
             this.clean = false;
         },
         update: function(id, prod){
-            if(!products.find(p=> p.id === id)){
-                throw errorDbNotFound(`no product with id ${id} exists`) 
-            }
-            replaceWith(products,id,pord);
+            prod.id = id;
+            validateProduct(prod,true);
+            replaceWith(products,id,prod);
             this.clean = false;
         }
     },
@@ -88,8 +147,8 @@ module.exports = {
            return this.list[ind];
        },
        add: function(comp){
-           comp.id = ++CID;
-           companies.push(comp);
+           validateCompany(comp,false);
+           companies.push(makeDbCompany(comp));
            this.clean = false;
        },
        delete: function(id){     
@@ -100,9 +159,8 @@ module.exports = {
            this.clean = false;
        },
        update: function(id, comp){
-          if(!companies.find(c=> c.id === id)){
-               throw errorDbNotFound(`no company with id ${id} exists`);
-           }
+           comp.id = id; 
+           validateCompany(comp);
            replaceWith(companies, id, comp);
            this.clean = false;
        },

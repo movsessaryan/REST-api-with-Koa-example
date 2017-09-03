@@ -3,17 +3,20 @@ const Koa = require('koa');
 const koaBody = require('koa-body');
 const route = require('koa-route');
 const app = new Koa();
-const port = process.env.PORT || 5010;
+const port = process.env.PORT || 5013;
 const controllersDir = './controllers';
 const products = require(`${controllersDir}/productsController`);
 const companies = require(`${controllersDir}/companiesController`);
 const errors = require('./constants/errorTypes');
+app.use(koaBody());
+
+
 const setOkCodeAfter = (fn)=>{
-    return async(ctx, ...args)=>{
+    return (async(ctx, ...args)=>{
         await fn(ctx, ...args);
         ctx.status = 200; 
-    }
-}
+    });
+};
 
 const myRoute = {
     get: (url, fn)=>{
@@ -32,7 +35,7 @@ const myRoute = {
         return route.update(url, setOkCodeAfter(fn));
     },
 
-}
+};
 
 
 app.use(
@@ -52,6 +55,9 @@ async(ctx, next)=> {
             case errors.DBCONFLICT:
                 code = 409;
                 break;
+            case errors.INVALIDDATA:
+                code = 422;
+                break;
             default:
                 code = 520;
                 msg = 'unknown error';
@@ -61,7 +67,6 @@ async(ctx, next)=> {
     }
 });
 
-app.use(koaBody());
 app.use(myRoute.get('/products', products.index));
 app.use(myRoute.get('/products/:id', products.get));
 app.use(myRoute.post('/products', products.add));
